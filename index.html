@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy store</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.0/axios.min.js"></script>
+    <style>
+        .bod{
+            background-image: linear-gradient(to right, rgba(255,0,0,0), rgb(238, 65, 65),yellow);
+            color:rgb(67, 20, 20)
+        }
+        .container{
+            position: absolute;
+            left:33%;
+            top:10% ;
+            text-align:center;
+        }
+        fieldset {
+            width: 160%; 
+            margin: auto;
+            padding: 10px; 
+            border: 1px solid black; 
+        }
+        input{
+            width: 60%; 
+            padding: 8px; 
+            margin-bottom: 10px;
+        }
+        .btn:hover {
+            background-color: rgb(200, 218, 100); 
+        }
+
+    </style>
+</head>
+<body class="bod">
+    <div class="container">
+        <div class="container1">
+            <fieldset>
+                <legend><h1><em>Candy Store</em> </h1></legend><br><br>
+                Candy Name <input type="text" id="name" placeholder="Enter name of candy"><br><br>
+                Description <input type="text" id="des" placeholder="Enter description of candy"><br><br>
+                Price       <input type="number" id="price" placeholder="Enter price"><br><br>
+                Quantity   <input type="number" id="quan" placeholder="Enter quantity"><br><br>
+                <button class="btn" >Add Item</button>
+            </fieldset>
+        </div>
+        <h3><b>List of Candies</b></h3>
+        <ul id="container2"></ul>
+    </div>
+    <script>
+        const apiUrl = "https://crudcrud.com/api/18a11b523f1d4432993f52f7ed235e72/candyShop";
+
+        document.addEventListener("DOMContentLoaded", getFromServer);
+
+        function getFromServer() {
+            axios.get(apiUrl)
+                .then((response) => {
+                    const data = response.data;
+                    data.forEach((candy) => {
+                        displayCandy(candy);
+                    });
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+        }
+        const btn=document.querySelector(".btn")
+        btn.addEventListener("click",addCandy)
+        function addCandy() {
+            const nameInput = document.getElementById("name");
+            const desInput = document.getElementById("des");
+            const priceInput = document.getElementById("price");
+            const quanInput = document.getElementById("quan");
+
+            const name = nameInput.value;
+            const des = desInput.value;
+            const price = priceInput.value;
+            const quan = quanInput.value;
+
+            if (name && des && price && quan) {
+                const candyData = {
+                    name,
+                    des,
+                    price,
+                    quan
+                };
+
+                axios.post(apiUrl, candyData)
+                    .then((response) => {
+                        displayCandy(response.data);
+                        nameInput.value = "";
+                        desInput.value = "";
+                        priceInput.value = "";
+                        quanInput.value = "";
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                    });
+            } else {
+                alert("Please fill in all fields.");
+            }
+        }
+
+        function displayCandy(candy) {
+            const list = document.createElement("li");
+            list.innerHTML = `${candy.name} ${candy.des} ${candy.price} <span id="quantity">${candy.quan}</span}`;
+            document.getElementById("container2").appendChild(list);
+            
+            const btn1 = document.createElement("button");
+            btn1.innerHTML = "Buy 1";
+            list.appendChild(btn1);
+            btn1.addEventListener("click", () => subtract(list, 1, candy._id));
+            
+            const btn2 = document.createElement("button");
+            btn2.innerHTML = "Buy 2";
+            list.appendChild(btn2);
+            btn2.addEventListener("click", () => subtract(list, 2, candy._id));
+            
+            const btn3 = document.createElement("button");
+            btn3.innerHTML = "Buy 3";
+            list.appendChild(btn3);
+            btn3.addEventListener("click", () => subtract(list, 3, candy._id));
+        }
+
+        function subtract(listItem, quantityToSubtract, candyId) {
+            const quantityElement = listItem.querySelector("#quantity");
+            const currentQuantity = parseInt(quantityElement.textContent);
+            if (!isNaN(currentQuantity) && currentQuantity >= quantityToSubtract) {
+                const updatedQuantity = currentQuantity - quantityToSubtract;
+                quantityElement.textContent = updatedQuantity;
+
+                // Update the quantity on the server
+                axios.put(`${apiUrl}/${candyId}`, { quan: updatedQuantity })
+                    .then((response) => {
+                        console.log(response);
+                        if (updatedQuantity === 0) {
+                            listItem.remove();
+                        }
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                    });
+            } else {
+                alert("Cannot buy more than available quantity!");
+            }
+        }
+
+
+    </script>
+</body>
+</html>
+
+
